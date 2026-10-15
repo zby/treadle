@@ -2,8 +2,8 @@
 
 **Write a workflow once. Run it in Pydantic AI or through your agent harness.**
 
-A workflow written in [Pydantic AI](https://ai.pydantic.dev) runs in Pydantic AI.
-But you may want the work done inside Claude Code, using its agents, tools and
+You can run a [Pydantic AI](https://ai.pydantic.dev) workflow directly in Python,
+but you may want the work done inside Claude Code, using its agents, tools and
 subscription access rather than making separate model API calls from Python.
 Starting that Python script from Claude Code still sends requests to the model
 configured for the Python run; it does not hand them to Claude Code's agents.
@@ -12,12 +12,12 @@ Treadle makes the same workflow usable through Claude Code, Codex, pi or another
 harness. It turns model calls into prompts for the harness's workers and returns
 their committed answers to the workflow. Branches, loops and parallel work stay
 in ordinary Python; workers use their harness's shell, editor or browser.
+This is a portable API from code to harness: **prompts out, committed answers back**.
 
-The orchestrating agent is the transmission: it runs `treadle step`, dispatches
+The orchestrator is the transmission: it runs `treadle step`, dispatches
 the printed prompts, makes sure responses are committed, and repeats. The
-workflow decides what happens next. This is a portable API from code to harness:
-**prompts out, committed answers back**. The orchestrator supplies the connection;
-Treadle does not include built-in harness dispatch integrations.
+workflow decides what happens next. Treadle does not include built-in harness
+dispatch integrations.
 
 ```text
 Python workflow → Treadle prompts → orchestrator → harness workers
@@ -59,7 +59,7 @@ Use a fresh store directory for a new demonstration. The command prints the
 call's key and the path to `prompt.md`, then exits **2**: waiting for an answer is
 expected, not a failure. Read the prompt for instructions and the answer path.
 
-For this one-call example, a coordinator answering alone can write and commit:
+For this one-call example, an orchestrator answering alone can write and commit:
 
 ```sh
 # Replace KEY with the full key printed by step.
@@ -78,7 +78,7 @@ Claims are optional when answering alone. With parallel workers, each worker
 first claims a call using its own unique ID; see the
 [claim/write/commit instructions](docs/RUNNING.md#answer-a-workflow-by-hand-or-from-a-harness).
 
-## Branches, bounds and parallel work
+## Branches, limits and parallel work
 
 [examples/review_loop.py](examples/review_loop.py) shows what code controls beyond
 one call. For topics such as bicycle gears and bicycle brakes, it:
@@ -87,12 +87,11 @@ one call. For topics such as bicycle gears and bicycle brakes, it:
 2. Asks a writer for a paragraph, then a reviewer for a typed verdict containing
    `accepted` and `problems`.
 3. Returns an accepted paragraph, or asks the writer to revise the listed problems.
-   `max_rounds` bounds write/review attempts; a final rejection raises an error.
+   `max_rounds` limits write/review attempts; a final rejection raises an error.
 4. Summarizes the accepted paragraphs only after all branches succeed.
 
-The orchestrator does not have to remember the retry limit or decide when to
-summarize. Those decisions are Python control flow; Pydantic AI validates the
-typed review answers.
+The workflow enforces the retry limit and decides when to summarize. Pydantic AI
+validates the typed review answers.
 
 Try the same workflow offline, without credentials or model API calls:
 
@@ -107,16 +106,16 @@ overrides. Both use fixed test topics: `a` is accepted immediately and `b` after
 one rewrite. They return the same result. Use a fresh store to watch the whole
 cycle; reusing a completed store replays matching committed answers.
 
-## Replay, resumption and limits
+## Replay and limits
 
 Each `step` reruns the Python workflow from the top, reusing matching committed
 answers as model responses. When no branch can proceed, it prints all calls still
-waiting. Progress lives in plain files, not the orchestrator's context: another
-session or harness can continue with the same workflow, inputs and store.
+waiting. Progress is stored in plain files, so another session or harness can
+continue with the same workflow, inputs and store.
 The waiting calls also serve as a task list, without a separate tracker.
 
-As the process settles, replace the orchestrator's transmission duties with
-harness hooks or a driver script. The workflow source can also run natively in
+You can automate the orchestrator's duties one at a time with harness hooks or
+a driver script. The workflow source can also run natively in
 Pydantic AI by supplying models; that is a **fresh run**, not a way to resume a
 step-mode store. See the [native example](docs/RUNNING.md#start-with-one-agent).
 
