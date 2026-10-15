@@ -1,9 +1,0 @@
-$ python -X dev -W always bl.py step (mid state: 3 reviewer calls open)
-exit=2 stderr bytes=0
-$ 30 replays each; md5 of stdout | sort | uniq -c
-store=t2 mode=human:      30 2ba7ef4563931baa3672cd3cb93fe650  -
-store=t2 mode=--json:      30 df04194233ff7a218ce61456f56a2da3  -
-store=mid mode=human:      30 9c6508d3c58a5202ceb7fcc93d34021f  -
-store=mid mode=--json:      30 2133dca865bf54a6f6cf7e395e93e2bc  -
-$ 30 fresh stores, first two steps each (every writer answered Paragraph via bl complete): md5 of the sorted key list after step 2
-     30 731be9db29a46e9d83520c1853203a5b  -

@@ -1,8 +1,0 @@
-[project]
-name = "monty-experiment"
-version = "0.1.0"
-requires-python = ">=3.12"
-dependencies = [
-    "pydantic-ai-harness[dynamic-workflow]>=0.54.0",
-    "pydantic-monty>=1.1.0",
-]
