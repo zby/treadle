@@ -2,3 +2,6 @@ include AGENTS.md CLAUDE.md PLAN.md uv.lock
 recursive-include instructions *.md
 recursive-include adr *.md
 recursive-include docs *.md
+recursive-include examples *.py
+recursive-include scripts *.py
+recursive-include tests *.py
