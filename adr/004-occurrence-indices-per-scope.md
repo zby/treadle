@@ -14,7 +14,7 @@ made before it anywhere in the workflow.
 
 A later feature, memoized tasks, would skip the body of a finished lifecycle
 function on replay, restarting at task granularity as the build systems in
-*Build Systems à la Carte* do (DESIGN.md, "Lineage" and "Not in version 1").
+*Build Systems à la Carte* do (see the [design constraints](../docs/DESIGN.md#not-in-version-1)).
 Skipped bodies stop counting their calls, so whole-replay indices would shift
 and an identical call elsewhere could receive another call's answer. Fixing that
 then would change the key format, and changing the format re-asks every stored
@@ -28,12 +28,7 @@ behaviour is the same as whole-replay counting. Cached operations use the same
 scheme.
 
 Memoized tasks themselves are not decided; they are recorded under "Later" in
-[PLAN.md](../PLAN.md) and in DESIGN.md.
-
-Implementation status: root-scope identity is implemented in
-`src/treadle/replay.py` and shared by cached operations. Functional tests in
-[test_runner.py](../tests/test_runner.py) cover repeated calls and record a
-counterexample to stable branch identity for identical concurrent calls.
+[PLAN.md](../PLAN.md).
 
 ## Basis
 
@@ -41,7 +36,8 @@ counterexample to stable branch identity for identical concurrent calls.
   to keep the option of memoized tasks open at no cost now. The argument is a
   deduction, not a measurement: with scopes in the key, adding tasks changes
   only the keys of calls inside tasks.
-- Stage 1's `test_identical_concurrent_calls_can_swap_branch_identity` shows that
+- [Functional tests](../tests/test_runner.py) cover repeated calls;
+  `test_identical_concurrent_calls_can_swap_branch_identity` shows that
   root-scope arrival-order indices can exchange answers between branches as
   upstream answers become available across steps. This does not test nested
   scopes or change this decision. Version 1 requires distinct prompts when

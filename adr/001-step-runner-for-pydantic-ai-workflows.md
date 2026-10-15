@@ -7,18 +7,20 @@ Recorded: 2026-10-15
 
 ## Context
 
-Treadle grew out of Beads Lite, an unpublished local issue tracker with
-dependencies, readiness, claims, assignment, a journal and backups. Its
-motivating case was the implementer–verifier relay that an operator ran by hand
-between agent sessions.
+The idea originated in [Commonplace](https://github.com/zby/commonplace), a
+sibling project with working workflows on its own machinery, without Pydantic AI.
+The author then tried rebuilding Beads Lite around that idea. Beads Lite was an
+unpublished local issue tracker with dependencies, readiness, claims, assignment,
+a journal and backups. Its motivating case was the implementer–verifier relay
+that an operator ran by hand between agent sessions.
 
 Writing that relay down showed that the dependencies are the workflow, and that a
 workflow is better written as code than as a graph of records: the next step
 depends on answers (repair only if verification failed; fan out after a plan),
-loops are bounded by attempts, and ordering follows from data flow. A
-proposal there described such "step programs": workflow code
-replayed from the top, expensive results cached, and work the program cannot do
-itself handed out as prompt files to whatever agent harness is running.
+loops are bounded by attempts, and ordering follows from data flow. The Beads
+Lite rebuild proposal described such "step programs": workflow code replayed
+from the top, expensive results cached, and work the program cannot do itself
+handed out as prompt files to whatever agent harness is running.
 
 Task trackers in general follow the same path: they start with tasks and
 dependencies and then grow workflows (status fields, state machines, automation
@@ -45,10 +47,9 @@ dependencies are control flow. Version 1, as designed in
   When no branch can proceed, all uncached model calls are printed together and
   the step exits. Whoever answers a call writes the answer in files its prompt
   names and runs `treadle commit`; a task is done when its answer is committed.
-  What a commit records is the tentative
-  [ADR 002](002-commit-attests-answer-files-by-hash.md).
-  Typed answers are validated by Pydantic AI on replay, not at commit. Status is
-  a step.
+  Run `treadle step` to see the current status.
+- Typed answers are validated by Pydantic AI on replay, not at commit. The tentative
+  [ADR 002](002-commit-attests-answer-files-by-hash.md) defines what a commit records.
 - Claims with leases (`treadle claim`, `treadle release`) keep two workers off the same
   call; the committing worker is recorded as the answer's provenance.
 - Other operations go through the same in-process cache (`@cached`), which is
@@ -62,18 +63,10 @@ Treadle starts as a new repository; none of the tracker's code is carried
 over. The name is
 [ADR 005](005-name-treadle.md).
 
-Implementation status: the Stage 1 runner, commit attestation, claims and
-cached operations are implemented in `src/treadle/`, with functional fake-model
-tests in `tests/` and an offline driver in `scripts/fake_review.py`.
-Live agents have since answered workflow prompts in Pi, Claude Code and Codex;
-[Runner lessons](../docs/experiments/2026-10-runner-lessons.md#live-trials)
-records the Pi one-call trial. [PLAN.md](../PLAN.md) tracks the Stage 2 real coding
-task, typed review and parallel-worker trial.
-
 ## Basis
 
 Observations, from the [experiments](../docs/experiments/README.md), all with
-fake models:
+fake models (maintained functional coverage is in [tests/](../tests/)):
 
 - Ordinary Pydantic AI workflow code ran unchanged both directly and under a
   step-runner prototype, with equal results; 6 steps for the example; typed
@@ -111,9 +104,11 @@ snapshots inside), and that a `gather` pauses as one snapshot with all its
 pending calls. Treadle is a third route to the same model: replay without a
 server, with calls answered by any harness.
 
-Carried over from the tracker, where they were tested: worker IDs are opaque strings, namespaced session IDs or kept UUIDs,
-never role names; release succeeds only for the current holder. Claims keep both
-rules.
+Claims keep two rules carried over from the tracker, where they were tested:
+
+- Worker IDs are opaque strings, namespaced session IDs or kept UUIDs, never role
+  names.
+- Release succeeds only for the current holder.
 
 Preferences: the operator prefers Pydantic AI for its depth and support, and an
 in-process mechanism because the cache must serve operations other than model
@@ -164,12 +159,16 @@ workflows, agents with tools, Python versions other than 3.13.
   and explicit invalidation; rejected because Pydantic AI calls carry only the
   prompt, and content keys reuse answers across edits.
 
-Consequences: replaying costs grow with the number of calls per workflow; the
-prompt rendering format becomes compatibility data; workflows must follow the
-determinism rules; status requires a replay, cheap only when time-consuming
-work is cached; tasks written by people need a well-designed inbox workflow,
-which is still open; the tracker's assignment, journal and backup features are
-gone until a consumer needs them.
+Consequences:
+
+- Replaying costs grow with the number of calls per workflow.
+- The prompt rendering format becomes compatibility data.
+- Workflows must follow the determinism rules.
+- Status requires a replay, cheap only when time-consuming work is cached.
+- Tasks written by people need a well-designed inbox workflow, which is still
+  open.
+- The tracker's assignment, journal and backup features are gone until a consumer
+  needs them.
 
 ## Revisit when
 

@@ -102,6 +102,17 @@ A coordinator answering alone may skip claims and omit `--worker` on commit,
 provided another worker does not hold a live claim. Keys accept unambiguous
 hexadecimal prefixes.
 
+### Harness permissions
+
+For an unattended harness loop, preapprove the command prefix `uv run treadle`
+in the harness's command-permission settings. This covers `step`, `claim`,
+`commit` and `release`; the worker also needs permission to write answer files
+in the store. If `uv` itself cannot start inside the harness sandbox (for
+example, a snap-installed `uv` reports a `snap-confine` capability error), the
+approval must allow execution outside that sandbox. This resolved the launcher
+failure in a live harness run. Only approve workflows you trust: `step` executes
+the supplied Python workflow.
+
 ### Answer files and commits
 
 - Text calls use `answer.md`. The entire UTF-8 file is delivered without trimming
@@ -180,14 +191,20 @@ Names and argument serialization are durable identity. Positional and keyword
 spelling is preserved: `read_revision("repository/")` and
 `read_revision(repository="repository/")` use different keys. Omitted defaults
 and explicitly supplied defaults also differ; keyword ordering does not.
-Keep calling conventions stable to reuse stored results. Results must be
-JSON-serializable; a return annotation is used to restore the type from JSON.
-The first stored execution and subsequent replays use the same round trip.
-Without an active store the decorated function runs plainly. Store read/write
-or cached-result decoding failures are remembered for the whole replay:
-`use_store` raises at context exit even if code caught the operation's error.
-Finish and join all tasks/threads using that store before leaving the context;
-errors from work outliving the context cannot retroactively fail its exit.
+Keep calling conventions stable to reuse stored results.
+
+Results must be JSON-serializable. A return annotation is used to restore the
+type from JSON. The first stored execution and subsequent replays use the same
+round trip.
+
+Without an active store the decorated function runs plainly.
+
+Store read/write or cached-result decoding failures are remembered for the whole
+replay. `use_store` raises at context exit even if code caught the operation's
+error.
+
+Finish and join all tasks/threads using that store before leaving the context.
+Errors from work outliving the context cannot retroactively fail its exit.
 
 A crash before recording a result can cause a cached operation to run again.
 Make side effects idempotent. Exceptions are not cached, and an unfinished
@@ -206,34 +223,40 @@ as upstream answers become available in different steps.
 
 Step mode runs Pydantic AI's synchronous instructions, system prompts, output
 validators and output functions through its public `Agent.using_thread_executor`
-context. These jobs count as busy, just like `asyncio.to_thread`. The executor is
-owned by the step and joined before publishing results or a waiting frontier.
-Cancelling a task does **not** kill its running Python thread; a cancelled sync
-callback can still finish a cached operation. Its warnings and store-integrity
-failures are still checked before step output. Callbacks must terminate; a
-blocked thread can hold shutdown indefinitely. Explicitly replacing this
-executor or disabling threads inside a workflow is outside the supported mode.
+context. These jobs count as busy, just like `asyncio.to_thread`.
+
+The step owns the executor and joins it before publishing results or a waiting
+frontier. Cancelling a task does **not** kill its running Python thread. A
+cancelled sync callback can still finish a cached operation. Its warnings and
+store-integrity failures are still checked before step output. Callbacks must
+terminate: a blocked thread can hold shutdown indefinitely. Explicitly replacing
+this executor or disabling threads inside a workflow is outside the supported
+mode.
 
 A waiting step snapshots its frontier, then cancels and awaits remaining tasks.
 Consequently workflow `finally` blocks run on **every waiting step**, not just
 on successful workflow completion. Use them for finite resource cleanup, not
 for "the workflow succeeded" effects. Put success-only work after the required
 answers have arrived, and keep durable side effects in idempotent cached
-operations. Finite cached operations in task finalizers are recorded normally;
-uncertain-attempt warnings are emitted, and swallowed store-integrity failures
+operations.
+
+Finite cached operations in task finalizers are recorded normally.
+Uncertain-attempt warnings are emitted, and swallowed store-integrity failures
 still fail the step. An uncaught finalizer exception also fails the step rather
 than publishing the earlier snapshot. Effects already performed remain.
 
 Do not start agent runs during cancellation cleanup. System-prompt and
 instruction callbacks can execute cached operations before a model request
 reaches the adapter. Those effects can occur even if the run subsequently fails
-and the finalizer catches that failure.
-Pydantic AI may instead cancel such a run earlier. Any model request that does
-reach the adapter during teardown is refused, even if an answer was previously
-committed; it will not become an additional worker task. Do not suppress
-cancellation and continue the workflow, spawn detached cleanup tasks, or wait
-indefinitely in a finalizer. Explicitly close async generators/context managers
-inside the workflow rather than relying on garbage-collection finalizers.
+and the finalizer catches that failure. Pydantic AI may instead cancel such a
+run earlier. Any model request that does reach the adapter during teardown is
+refused, even if an answer was previously committed. It will not become an
+additional worker task.
+
+Do not suppress cancellation and continue the workflow, spawn detached cleanup
+tasks, or wait indefinitely in a finalizer. Explicitly close async
+generators/context managers inside the workflow rather than relying on
+garbage-collection finalizers.
 
 ## Trusted Python and imports
 
@@ -241,12 +264,14 @@ Workflow files execute under a synthetic module name derived from their resolved
 path, not their filename stem. A workflow named `types.py` therefore does not
 replace `sys.modules["types"]`. The synthetic entry remains available for runtime
 annotations through execution and teardown, then is removed (or its previous
-entry restored), including after load failure. The prompt renderer and v1 key
-encoding are unchanged; the synthetic name is not an explicit key field. If a
-workflow renders its own `__name__`, or Pydantic uses module-qualified schema
-labels to disambiguate same-named types, the new identity can change that prompt
-and hence its affected keys. There is no global key-version bump. Prefer
-unambiguous type names and semantic prompts rather than module identities.
+entry restored), including after load failure.
+
+The prompt renderer and v1 key encoding are unchanged. The synthetic name is not
+an explicit key field. If a workflow renders its own `__name__`, or Pydantic uses
+module-qualified schema labels to disambiguate same-named types, the new identity
+can change that prompt and hence its affected keys. There is no global
+key-version bump. Prefer unambiguous type names and semantic prompts rather than
+module identities.
 
 The workflow directory is temporarily first on `sys.path` throughout the step,
 so existing absolute sibling imports work, including imports inside callbacks.

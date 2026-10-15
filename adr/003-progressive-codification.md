@@ -21,14 +21,6 @@ Python. The workflow file does not change between levels. The CLI is designed
 for this: every duty is a command with defined exit codes, step output is stable
 and line-based and states the next action, and prompts are self-contained.
 
-Implementation status: the CLI and the offline script driver
-[`scripts/fake_review.py`](../scripts/fake_review.py) implement the mechanical
-loop. [Functional tests](../tests/test_runner.py) compare the script-driven run
-with direct Pydantic AI execution. Live trials have since run in Pi, Claude Code
-and Codex; [Runner lessons](../docs/experiments/2026-10-runner-lessons.md#live-trials)
-records the Pi one-call trial. Stage 2 still needs to record orchestrator mistakes
-on real coding work, typed review and parallel workers ([PLAN.md](../PLAN.md)).
-
 ## Basis
 
 - The operator's argument: control flow lives in workflow code, so the
@@ -37,8 +29,12 @@ on real coding work, typed review and parallel workers ([PLAN.md](../PLAN.md)).
   the failure names a specific duty that code can take over.
 - Deduction: each level is possible because every duty is already a CLI command
   and the workflow is ordinary Pydantic AI code.
-- At the decision, no real orchestrator had run a workflow. Stage 2 will record
-  how often agents fail at each duty and whether harness hooks can take over.
+- [Functional tests](../tests/test_runner.py) compare the offline
+  [`scripts/fake_review.py`](../scripts/fake_review.py) driver with direct
+  Pydantic AI execution. This tests the CLI loop, not harness dispatch.
+- At the decision, no real orchestrator had run a workflow. The
+  [planned trial](../PLAN.md#stage-2-a-tracker-trial-on-real-work) will record how
+  often agents fail at each duty and whether harness hooks can take over.
 
 ## Alternatives and consequences
 

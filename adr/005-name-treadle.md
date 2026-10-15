@@ -7,10 +7,13 @@ Recorded: 2026-10-15
 
 ## Context
 
-The project began as Beads Lite, a lighter take on the Beads issue tracker, with
-the CLI `bl`. After [ADR 001](001-step-runner-for-pydantic-ai-workflows.md) it
-targets running one workflow from any agent harness; the tracker became a
-consequence, and "Beads Lite" described a product that no longer exists.
+The workflow idea came from [Commonplace](https://github.com/zby/commonplace),
+a sibling project with working workflows on its own machinery, without Pydantic
+AI. The author tried rebuilding Beads Lite, a lighter take on the Beads issue
+tracker with the CLI `bl`, around that idea. After
+[ADR 001](001-step-runner-for-pydantic-ai-workflows.md) the project targets running
+one Pydantic AI workflow from any agent harness; the tracker became a consequence,
+and "Beads Lite" described a product that no longer exists.
 
 ## Decision
 

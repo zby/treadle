@@ -54,15 +54,6 @@ uv run treadle step examples/explain.py:workflow \
   --inputs '{"topic": "a loom"}' --store /tmp/treadle-explain-demo
 ```
 
-For an unattended harness loop, preapprove the command prefix `uv run treadle`
-in the harness's command-permission settings. This covers `step`, `claim`,
-`commit` and `release`; the worker also needs permission to write answer files
-in the store. If `uv` itself cannot start inside the harness sandbox (for
-example, a snap-installed `uv` reports a `snap-confine` capability error), the
-approval must allow execution outside that sandbox. This resolved the launcher
-failure in a live harness run. Only approve workflows you trust: `step` executes
-the supplied Python workflow.
-
 Use a fresh store directory for a new demonstration. The command prints the
 call's key and the path to `prompt.md`, then exits **2**: waiting for an answer is
 expected, not a failure. Read the prompt for instructions and the answer path.
@@ -85,6 +76,7 @@ delivered. Do not change committed files.
 Claims are optional when answering alone. With parallel workers, each worker
 first claims a call using its own unique ID; see the
 [claim/write/commit instructions](docs/RUNNING.md#answer-a-workflow-by-hand-or-from-a-harness).
+For unattended runs, see [harness permissions](docs/RUNNING.md#harness-permissions).
 
 ## Branches, limits and parallel work
 
@@ -127,9 +119,18 @@ a driver script. The workflow source can also run natively in
 Pydantic AI by supplying models; that is a **fresh run**, not a way to resume a
 step-mode store. See the [native example](docs/RUNNING.md#start-with-one-agent).
 
+The workflow is a **monadic build**: later work depends on earlier results, as
+when the review verdict above determines whether to revise. [Luigi's dynamic dependencies](https://luigi.readthedocs.io/en/stable/tasks.html#dynamic-dependencies)
+use a similar restart pattern: yielding unfinished dependencies suspends a task,
+and its `run()` restarts from the top when resumed. Treadle restarts the whole
+workflow, with its own scheduler and answer keys. See the
+[design lineage](docs/DESIGN.md#lineage-monadic-build-systems).
+
 Keep replay deterministic. Put side effects in [cached operations](docs/RUNNING.md#cache-operations-not-whole-workflows)
-and make them idempotent: a crash or exception before recording a result can
-cause another execution.
+and make them **idempotent**: repeating an operation has the same intended effect
+as doing it once. Luigi requires this of restarting task code too. Even a cached
+operation can repeat if its side effect happens before a crash or exception
+prevents recording the result.
 
 Treadle runs **trusted Python on a local POSIX filesystem**, not in a sandbox.
 Step mode does not execute Pydantic AI function tools; these are distinct from
@@ -139,12 +140,21 @@ need distinct answers. Read the [known limits](docs/DESIGN.md#non-guarantees-and
 and [cancellation rules](docs/RUNNING.md#synchronous-callbacks-and-cancellation)
 before writing workflows.
 
+## Origins
+
+The idea comes from [Commonplace](https://github.com/zby/commonplace), a sibling
+project with working workflows on its own machinery, without Pydantic AI. The
+author then tried rebuilding the Beads Lite issue tracker around that idea. The
+project became a Pydantic AI workflow runner and was renamed Treadle; a treadle
+is a pedal that drives a loom one step at a time.
+
 ## Documentation
 
-- [Running Treadle](docs/RUNNING.md): CLI, answer files, claims and cached operations.
-- [Design](docs/DESIGN.md) and [decision records](adr/README.md): semantics and rationale.
-- [Positioning](docs/POSITIONING.md): audience, alternatives and design targets.
-- [Experiments](docs/experiments/README.md), [plan](PLAN.md) and [contributor instructions](AGENTS.md).
+- Next: [Running Treadle](docs/RUNNING.md) for commands, API and workflow rules.
+- Internals: [Design](docs/DESIGN.md), then [decision records](adr/README.md) for reasons.
+- Next work: [Plan](PLAN.md).
+- Optional background: [Experiments](docs/experiments/README.md).
+- Contributing: [Contributor instructions](AGENTS.md).
 
 ## License
 

@@ -10,7 +10,7 @@ agent harness. The CLI, package and import name are all `treadle`.
 through a Pydantic AI `Model`, and prints every call still waiting for an answer
 when no branch can proceed. Workers write answers where each prompt says and
 `treadle commit` them; `treadle claim` keeps two workers off the same call.
-Positioning is in [docs/POSITIONING.md](docs/POSITIONING.md).
+Start with [README.md](README.md); usage is in [docs/RUNNING.md](docs/RUNNING.md).
 
 Read [PLAN.md](PLAN.md), the [design](docs/DESIGN.md), and
 [ADR 001](adr/001-step-runner-for-pydantic-ai-workflows.md) before implementation.
