@@ -23,10 +23,13 @@ around a `try` is a retry. Treadle lets any harness be its runtime.
 A treadle is the foot pedal that drives a loom: each push turns the machine one
 step, and one day a motor takes over.
 
-> **Status:** designed, not built. The design is in [docs/DESIGN.md](docs/DESIGN.md)
-> and a prototype passed functional tests with fake models; the package does not
-> implement it yet ([PLAN.md](PLAN.md)). Treadle grew out of Beads Lite, an issue
-> tracker.
+> **Status:** An early working prototype, exercised with fake models. No real
+> model or harness sub-agent has answered a workflow prompt yet; the task-tracker
+> trial is still planned. Start with the
+> [offline example and CLI guide](docs/RUNNING.md); see the
+> [design](docs/DESIGN.md) for semantics and limits and the
+> [runner lessons](docs/experiments/2026-10-runner-lessons.md) for findings so far.
+> Treadle grew out of Beads Lite, an issue tracker.
 
 [^graph]: From Samuel Colvin's
     [The code IS the graph](https://x.com/samuelcolvin/status/2110055467007303729).
@@ -35,47 +38,43 @@ step, and one day a motor takes over.
 ## How it works
 
 ```python
-# review.py: an ordinary Pydantic AI workflow
-import asyncio
-from pydantic import BaseModel
+# examples/explain.py: an ordinary Pydantic AI workflow
 from pydantic_ai import Agent
 
-
-class Verdict(BaseModel):
-    accepted: bool
-    problems: list[str]
-
-
-writer = Agent("anthropic:claude-sonnet-4-5", name="writer", instructions="Write one clear paragraph.")
-reviewer = Agent(
-    "anthropic:claude-sonnet-4-5",
-    name="reviewer",
-    output_type=Verdict,
-    instructions="Accept the paragraph or list concrete problems.",
+explainer = Agent(
+    name="explainer",
+    instructions="Explain the topic in one clear, concrete paragraph.",
 )
 
 
-async def workflow(topics: list[str]) -> dict:
-    async def draft(topic):
-        text = (await writer.run(f"Write one paragraph about {topic}.")).output
-        verdict = (await reviewer.run(f"Review this paragraph:\n\n{text}")).output
-        return {"topic": topic, "text": text, "accepted": verdict.accepted}
-
-    return {"sections": await asyncio.gather(*[draft(t) for t in topics])}
+async def workflow(topic: str) -> str:
+    return (await explainer.run(f"Explain {topic}.")).output
 ```
 
-A coordinating agent steps through it:
+A coordinating agent steps through it (keys and paths abbreviated):
 
 ```text
-$ treadle step review.py:workflow --inputs '{"topics": ["a", "b"]}' --store run/
-3f9c2a1b  writer  run/3f9c2a1b.../prompt.md
-81aa02c4  writer  run/81aa02c4.../prompt.md
-$ treadle claim 3f9c --worker session-1 --store run/     (optional: only needed when workers share a store)
-  ... sub-agents read each prompt.md and draft the answer where it says ...
-$ treadle commit 3f9c --worker session-1 --store run/
-$ treadle step review.py:workflow --inputs '{"topics": ["a", "b"]}' --store run/
-...                                   (the two reviewer calls)
+$ treadle step examples/explain.py:workflow --inputs '{"topic": "a loom"}' --store run/
+call {"agent": "explainer", "holder": null, "key": "3f9c2a1b...", "prompt": "/work/run/3f9c2a1b.../prompt.md"}
+waiting: 1 open call(s). Next: claim, read prompts, write answers, treadle commit, then treadle step.
+$ treadle claim 3f9c --worker harness:session-1 --store run/
+  ... read prompt.md and draft answer.md where it says ...
+$ treadle commit 3f9c --worker harness:session-1 --store run/
+$ treadle step examples/explain.py:workflow --inputs '{"topic": "a loom"}' --store run/
+result "A loom weaves cloth."
+done: workflow completed. Next: no action.
 ```
+
+Claims are optional when a coordinator answers alone. No model or credentials
+are needed for step mode: Treadle supplies the model adapter. For a native run,
+supply a model with `explainer.override(model=...)`; the
+[offline native instructions](docs/RUNNING.md#start-with-one-agent) use Pydantic
+AI's `TestModel` without credentials.
+
+The second example, [review_loop.py](examples/review_loop.py), adds parallel
+drafting, typed reviews, bounded rewriting and summarization. Its
+[offline driver](scripts/fake_review.py) demonstrates explicit claims and the
+JSONL worker protocol.
 
 Each `treadle step` replays the workflow from the top. Stored answers are delivered
 to their `agent.run` calls as ordinary model responses, so Pydantic AI validates
@@ -83,7 +82,10 @@ typed answers itself. When no branch can proceed, every call still waiting for a
 answer is printed, and the step exits. Whoever answers a call (the coordinator,
 a sub-agent, a person) drafts the answer where the prompt says and runs
 `treadle commit`; a task is done when its answer is committed. Claims with leases
-keep two workers from doing the same call.
+keep two workers from doing the same call. Text answers preserve the whole UTF-8
+file, including a trailing newline. Changed or missing attested files are fatal
+at the step boundary even if workflow code catches the read error; worker
+`CallFailed` refusals remain catchable.
 
 The workflow's progress lives in the store, not in anyone's context, so another
 session or another harness can continue it, and `treadle step` is also the status
@@ -95,18 +97,33 @@ move that duty into code: a harness hook, then a driver script, and finally a
 native run of the same workflow in Pydantic AI. The workflow file stays the same
 throughout.
 
-Operations with side effects use the same store, so replaying them is safe:
+Operations with side effects use the same store to reuse recorded results.
+They must be idempotent: an exception or a crash before recording the result can
+cause another execution. This is not an exactly-once guarantee. Operation names
+and argument spelling are durable identity: `acquire("url", "rev")` and
+`acquire(url="url", commit="rev")` have different keys. The cache does not
+normalize positional/keyword arguments or defaults:
 
 ```python
 from treadle import cached
 
 
 @cached(name="acquire")
-def acquire(url: str, commit: str) -> str: ...  # runs once; later steps get the recorded result
+def acquire(url: str, commit: str) -> str: ...  # later steps reuse the recorded result
 ```
+
+Other [non-guarantees and known limits](docs/DESIGN.md#non-guarantees-and-known-limits)
+include arrival-order identity for identical concurrent calls: use distinct
+prompts for branch-specific answers. Multiple workers can share claims, but
+overlapping `step` commands on one store are rejected. Waiting steps cancel
+pending tasks, so workflow `finally` blocks are cleanup, not evidence of success.
+See [callback/cancellation guidance](docs/RUNNING.md#synchronous-callbacks-and-cancellation)
+and [trusted-Python import constraints](docs/RUNNING.md#trusted-python-and-imports).
 
 ## Documentation
 
+- [Running Treadle](docs/RUNNING.md): offline example, CLI protocol, answers,
+  claims and cached operations.
 - [Positioning](docs/POSITIONING.md): who it is for, what it is not, neighbours.
 - [Design](docs/DESIGN.md): step semantics, rules for workflows, answer identity,
   cached operations, store layout, and what version 1 leaves out.

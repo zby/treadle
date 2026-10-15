@@ -1,13 +1,12 @@
 # Design: a task tracker where workflows come first
 
-**Status:** design of version 1, recorded 2026-10-15. A prototype implemented the
-step mechanism and passed functional tests with fake models
-([report](experiments/2026-10-pydantic-step-runner.md)). The prototype still had
-`treadle complete` and `treadle fail` commands, which took the answer and validated it,
-and no claims; the parts of this design that replace them (answer files attested
-by `treadle commit`, validation through Pydantic AI retries, claims) are untested.
-Nothing is in `src/` yet; see
-[PLAN.md](../PLAN.md). The decision and the alternatives are in
+**Status:** version 1 design and Stage 1 implementation, 2026-10-15. The runner
+is in `src/treadle/`, with functional fake-model tests in `tests/` and an offline
+driver in `scripts/fake_review.py`. Real harness trials remain Stage 2 of
+[PLAN.md](../PLAN.md). See [Running Treadle](RUNNING.md) for commands and supported
+inputs. Earlier feasibility evidence is in the
+[prototype report](experiments/2026-10-pydantic-step-runner.md); the decision and
+alternatives are in
 [ADR 001](../adr/001-step-runner-for-pydantic-ai-workflows.md).
 
 ## Purpose
@@ -101,32 +100,72 @@ run starts fresh.
 2. Run the workflow function from the top.
 3. Each model request either gets its stored answer, returned as an ordinary
    model response, or is recorded as an open call; that branch then waits.
-4. When no branch can proceed, write the open set atomically to `<store>/open.json`, print
-   all open calls together, and exit 2. Calls issued in every branch of an
-   `asyncio.gather` appear in the same step.
+4. When no branch can proceed, snapshot the open set, cancel and await pending
+   tasks, and finish executor shutdown. Only after checking for teardown and
+   remembered store-integrity failures, write the open set atomically to
+   `<store>/open.json`, print all open calls together, and exit 2. Calls issued in
+   every branch of a supported `asyncio.gather` appear in the same step.
 
 A step re-executes everything that is not cached, so status is cheap only when
 every time-consuming operation is a cached call. The prototype took about 0.8 s
 per step, mostly importing Pydantic AI.
+
+## Non-guarantees and known limits
+
+These limits apply to version 1. Deferred work is tracked in
+[PLAN.md](../PLAN.md#later-each-on-a-demonstrated-need).
+
+- **Not exactly-once execution.** A cached operation can run again after an
+  exception or a crash between its side effect and recording its result.
+  Operations must be idempotent; caching alone does not make side effects safe.
+- **No stable branch identity for identical concurrent calls.** Occurrence
+  indices follow request arrival order within a scope. As upstream answers
+  become available across steps, identical downstream calls can exchange their
+  occurrence indices and receive each other's answers. A
+  [functional counterexample](../tests/test_runner.py) records this limit. Use
+  distinct prompts when answers are branch-specific; do not rely on arrival
+  order. Changing the identity rule remains a separate design decision.
+- **No simultaneous steps on one store.** Atomic file writes alone do not
+  establish a consistent frontier between concurrent replays. A separate
+  `.step.lock` guard rejects overlapping steps and `use_store` runs. Workers may
+  still claim and commit while a step runs.
+- **No guarantee that repository changes are preserved by an answer commit.**
+  Commits attest only files inside the call's directory, not code a worker edits
+  elsewhere. Repository changes need their own version-control discipline.
 
 ## Rules for workflows
 
 - Code between agent calls must be deterministic and free of side effects,
   except through cached operations. It is re-executed on every step.
 - Reading mutable inputs (for example a directory of task files) on every step is
-  allowed: content keys bind each answer to the prompt it answers, so a changed
-  input changes which calls are issued, never which answer a call receives.
+  allowed. Changes that flow into a rendered prompt change its content key.
+  Identical concurrent calls still have the arrival-order limitation above.
 - The workflow awaits only agent runs, cached operations, gathers and tasks of
   them, `asyncio.sleep` and `asyncio.to_thread`. Other I/O awaited directly on
   the event loop is invisible to quiescence detection; do it inside a cached
   operation.
+- A waiting step cancels pending tasks, so their `finally` blocks run on every
+  step. Use finalizers for finite resource cleanup, not success-only effects.
+  Finite cached cleanup operations retain normal recording/warning/integrity
+  behavior. Cleanup agent runs are prohibited. Model requests reaching the
+  adapter during teardown are refused, but this is not a pre-run barrier:
+  system-prompt and instruction callbacks can execute cached operations before
+  the adapter, even if the run subsequently fails and that failure is caught.
+  There is no cleanup-agent side-effect prevention guarantee. Do not suppress
+  cancellation or create detached cleanup tasks. See
+  [cancellation guidance](RUNNING.md#synchronous-callbacks-and-cancellation).
+- Workflows are trusted Python, not sandboxed. A synthetic module name avoids
+  clobbering `sys.modules` by filename; temporary sibling import support still
+  follows ordinary Python import caching/shadowing rules. See
+  [import constraints](RUNNING.md#trusted-python-and-imports).
 - Every agent has a unique `name=`.
 - Version 1 agents have no Pydantic AI function tools. Their tools are listed in
   the prompt as unavailable.
 
 ## Prompts and answers
 
-`StepModel` is a Pydantic AI `Model` subclass. One model request is one call;
+`StepModel` is an internal Pydantic AI `Model` subclass, not a top-level package
+export. One model request is one call;
 for an agent without tools, one request is one `agent.run`.
 
 `<store>/<key>/prompt.md` contains the agent's instructions, every message part
@@ -136,7 +175,8 @@ answer instructions:
 - **Where:** draft the answer in `answer.md` (text agents) or `answer.json`
   (typed agents) in the key's directory, in any way and as many times as needed.
 - **Format:** plain text, or one JSON object matching the output schema, which
-  the prompt includes.
+  the prompt includes. Text is the entire UTF-8 file, including leading/trailing
+  whitespace and final newlines; no stripping or newline normalization occurs.
 - **Refusal or failure:** draft `failure.md` with the reason instead. The
   `agent.run` then raises `CallFailed`, a subclass of `ModelAPIError`, the error
   a provider failure raises. Uncaught, it ends the step with exit 1.
@@ -172,8 +212,13 @@ object.
 **Answers are write-once.** A committed call cannot be committed again. Every
 step checks the hashes of the files it reads against `commit.json`; a changed or
 missing committed file stops the step with exit 1, naming the file, instead of
-silently changing a past result. Because committed files cannot change unnoticed,
-workflow code may read them and gets the same content on every replay.
+silently changing a past result. Replay remembers store I/O and decoding failures
+independently of workflow exception handlers; a caught integrity error cannot
+produce a successful result or waiting frontier. `use_store` also raises at its
+context boundary. Worker refusals remain catchable `CallFailed` exceptions.
+These checks assume intact commit metadata and are not protection against
+malicious metadata replacement or every filesystem race. Under that assumption,
+workflow code may read committed files and gets the same content on every replay.
 Replacing an answer is a future invalidation command, not an edit.
 
 ## Answer identity
@@ -258,10 +303,13 @@ Claims stop two workers from doing the same call.
   session keeps its ID; a replacement session gets a new one. Names such as
   "implementer" are not IDs: two workers would share them. `treadle` does not
   authenticate IDs.
-- Claim, release and commit take an exclusive lock on the store, so they are
-  atomic with respect to each other. `treadle step` does not need the lock: it reads
-  commits and claims and writes prompts and `open.json`, all atomically.
-- Local filesystems only.
+- Claim, release and commit take an exclusive `.lock` on the store, so they are
+  atomic with respect to each other. Steps and `use_store` runs take a separate
+  `.step.lock` guard to reject overlapping replays, without holding the worker
+  lock throughout execution. A step briefly takes the worker lock to publish
+  `open.json`; prompts, commits and the open set are published atomically.
+- Local POSIX filesystems only in the current implementation (`fcntl` locking).
+  Windows and network filesystems are not supported.
 
 ## Cached operations
 
@@ -273,11 +321,15 @@ from treadle import cached
 
 @cached(name="acquire")
 def acquire(source: str, commit: str) -> str:
-    """Clone and check out; runs once, replays get the recorded path."""
+    """Idempotent clone and checkout; replays reuse the recorded path."""
 ```
 
 - Key: scope, operation name, JSON of the arguments, occurrence index. The name is
   required, so renaming the Python function does not lose stored results.
+  Positional and keyword argument spelling is preserved, not bound to the
+  function signature: `f(1)` and `f(x=1)` differ, as do omitted and explicit
+  defaults. Keyword ordering does not matter. Keep spelling stable for reuse;
+  this describes the existing key format, not a normalization or format change.
 - The result is stored as JSON and validated back into the return annotation.
   The first execution returns the same round-tripped value a replay gets.
 - Exceptions are not stored: the operation runs again on the next step.
@@ -290,7 +342,8 @@ def acquire(source: str, commit: str) -> str:
 
 ```text
 <store>/open.json            open set of the latest step
-<store>/.lock                taken by claim, release and commit
+<store>/.lock                serializes worker transactions and open-set publication
+<store>/.step.lock           rejects overlapping steps and use_store runs
 <store>/<key>/call.json      kind (agent | op), agent or operation name, occurrence
               prompt.md      agent calls: what to do, where to answer, how to commit
               answer.md      text answer          }
@@ -305,9 +358,14 @@ def acquire(source: str, commit: str) -> str:
 
 "No branch can proceed" is detected by an event-loop subclass that overrides only
 public methods (`call_soon`, `call_at`, `run_in_executor`) and tracks queued
-callbacks, timers and executor jobs. A running cached operation counts as busy.
-Raw socket I/O awaited directly by the workflow is the known blind spot, excluded
-by the rules.
+callbacks, timers and executor jobs. Pydantic AI's public
+`Agent.using_thread_executor` context routes sync callbacks through the tracked
+`run_in_executor`, rather than its default invisible anyio threads. The step
+owns and joins that executor, including running threads whose waiters were
+cancelled, before checking fatal replay state and publishing output. Python
+cannot kill a running callback thread; callbacks must terminate. A running
+cached operation counts as busy. Raw socket I/O awaited directly by the workflow
+is the known blind spot, excluded by the rules.
 
 ## Tasks written by people (open design)
 
@@ -331,7 +389,8 @@ Deleting a file stops its calls from being issued. Open questions:
 - Cache-through for direct runs: a real model behind `StepModel`, storing as it
   goes, so a plain Pydantic AI run becomes resumable and can continue a run
   started under `treadle step`.
-- Ready-made hooks and driver scripts for codification levels 2 and 3.
+- Harness-specific hooks and driver scripts for codification levels 2 and 3.
+  The offline fake driver demonstrates the CLI protocol, not harness dispatch.
 - Recording the model that produced an answer (the worker is recorded via claims).
 - An invalidation command.
 - Model-written workflows in the Monty subset (`DynamicWorkflow`).

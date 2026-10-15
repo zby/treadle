@@ -7,33 +7,43 @@ ordinary Pydantic AI workflows, as decided in
 [ADR 001](adr/001-step-runner-for-pydantic-ai-workflows.md) and designed in
 [DESIGN.md](docs/DESIGN.md).
 
-Current state (2026-10-15): the repository holds the design, the ADR and the
-experiment reports. `src/` is empty. A prototype of version 1 passed functional
-tests with fake models in a session scratchpad
-([report](docs/experiments/2026-10-pydantic-step-runner.md)); stage 1 ports it.
-No real model or harness sub-agent has answered a prompt yet.
+Current state (2026-10-15): Stage 1 is implemented in `src/treadle/`, with
+functional tests in `tests/`, an introduction in `examples/explain.py`, a
+second example in `examples/review_loop.py`, and an
+offline driver in `scripts/fake_review.py`. Usage and supported limits are in
+[Running Treadle](docs/RUNNING.md). Earlier prototype evidence is in the
+[experiment report](docs/experiments/2026-10-pydantic-step-runner.md).
+No real model or harness sub-agent has answered a workflow prompt yet.
+
+This is an early working prototype exercised with fake models, not a real-harness
+trial. [Runner lessons](docs/experiments/2026-10-runner-lessons.md) collects the
+technical findings and observed test runtimes. Stage 2 remains planned.
 
 ## Stage 1: the step runner with claims
 
-Port the prototype into `src/treadle/` with functional tests, applying the
-changes made since it ran:
+The [design](docs/DESIGN.md) defines runtime semantics and
+[non-guarantees](docs/DESIGN.md#non-guarantees-and-known-limits).
+The current commands are `treadle step`, `treadle claim`, `treadle commit`, and
+`treadle release`.
 
-- `treadle commit` replaces `treadle complete` and `treadle fail`: workers write `answer.md`,
-  `answer.json` or `failure.md` (and any further files) in the call's directory
-  however they like; `treadle commit KEY [FILE...]` writes `commit.json` with the
-  SHA-256 of each committed file. Files are attested in place, not copied.
-- Typed answers are validated by Pydantic AI on replay; an invalid answer turns
-  into a retry request.
-- Answers are write-once: a committed call cannot be committed again, and a
-  step stops on a committed file whose hash no longer matches.
-- Claims: `treadle claim`, `treadle claim --next`, `treadle release`, with leases, under a store
-  lock, restricted to the latest open set; provenance recorded from the claim.
-- Keys include a scope (the empty string for the workflow, the only scope in
-  version 1) and count occurrence indices per scope.
-- `@cached` requires an explicit `name=`; the prompt format carries a version in
-  every key.
+### Current capabilities
 
-Acceptance, all with fake models and isolated stores:
+- Tracked synchronous Pydantic AI callbacks participate in complete step
+  frontiers; executor threads are joined before output.
+- Store I/O and decoding failures remain fatal even when workflow code catches
+  them, including during finite cached cleanup. Worker refusals remain catchable.
+- Synthetic workflow module identities avoid overwriting filename-stem modules;
+  workflows and their imports remain trusted Python, not isolated or sandboxed.
+- Text answers preserve exact whitespace and newlines. Cancellation runs
+  finalizers on waiting steps; cleanup agent runs are unsupported and adapter
+  refusal does not prevent pre-request callback side effects.
+
+See [Running Treadle](docs/RUNNING.md) for operational limits and
+[correctness regressions](tests/test_correctness.py) for functional examples.
+
+### Development checklist
+
+Functional goals exercised with fake models and isolated stores:
 
 - The example workflow (`examples/review_loop.py`) runs unchanged directly in
   Pydantic AI and under `treadle step` driven by a fake coordinator that writes answer
@@ -68,6 +78,11 @@ Acceptance, all with fake models and isolated stores:
 
 ## Stage 2: a tracker trial on real work
 
+The **next planned application is a task-tracker example**, suggested by the
+user. It is not implemented. Use it to explore real work without yet choosing
+the task-file format or closing, dropping and reopening semantics; those remain
+open design questions.
+
 With real harness sub-agents answering, run on real tasks in this repository:
 
 - the inbox workflow (DESIGN.md, "Tasks written by people"): settle the task-file
@@ -82,6 +97,9 @@ duty into a hook or script (DESIGN.md, "Progressive codification").
 
 ## Later, each on a demonstrated need
 
+- Divide the growing functional test suite when separately commissioned.
+- Stable branch identity for identical concurrent calls, if distinct prompts are
+  insufficient; revisit ADR 004 before changing answer keys.
 - Agents with Pydantic AI tools (see DESIGN.md, "Not in version 1").
 - Cache-through for direct runs, making plain Pydantic AI runs resumable and
   able to continue a run started under `treadle step`.

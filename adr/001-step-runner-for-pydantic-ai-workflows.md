@@ -62,10 +62,11 @@ Treadle starts as a new repository; none of the tracker's code is carried
 over. The name is
 [ADR 005](005-name-treadle.md).
 
-Implementation status: a prototype of the step mechanism passed functional
-tests with fake models; it predates `treadle commit` and claims. Building
-version 1 is [PLAN.md](../PLAN.md) stage 1. No run with real
-models or real harness sub-agents has happened yet.
+Implementation status: the Stage 1 runner, commit attestation, claims and
+cached operations are implemented in `src/treadle/`, with functional fake-model
+tests in `tests/` and an offline driver in `scripts/fake_review.py`.
+[PLAN.md](../PLAN.md) tracks acceptance and the Stage 2 real-harness trial. No
+run with real models or real harness sub-agents has happened yet.
 
 ## Basis
 
@@ -73,7 +74,7 @@ Observations, from the [experiments](../docs/experiments/README.md), all with
 fake models:
 
 - Ordinary Pydantic AI workflow code ran unchanged both directly and under a
-  `bl step` prototype, with equal results; 6 steps for the example; typed
+  step-runner prototype, with equal results; 6 steps for the example; typed
   answers came back as real model instances; 30 replays were identical
   ([report](../docs/experiments/2026-10-pydantic-step-runner.md)).
 - A cached side-effecting operation ran exactly once over a multi-step run; the

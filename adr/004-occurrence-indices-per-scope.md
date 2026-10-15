@@ -30,7 +30,10 @@ scheme.
 Memoized tasks themselves are not decided; they are recorded under "Later" in
 [PLAN.md](../PLAN.md) and in DESIGN.md.
 
-Implementation status: design only; PLAN.md stage 1.
+Implementation status: root-scope identity is implemented in
+`src/treadle/replay.py` and shared by cached operations. Functional tests in
+[test_runner.py](../tests/test_runner.py) cover repeated calls and record a
+counterexample to stable branch identity for identical concurrent calls.
 
 ## Basis
 
@@ -38,6 +41,11 @@ Implementation status: design only; PLAN.md stage 1.
   to keep the option of memoized tasks open at no cost now. The argument is a
   deduction, not a measurement: with scopes in the key, adding tasks changes
   only the keys of calls inside tasks.
+- Stage 1's `test_identical_concurrent_calls_can_swap_branch_identity` shows that
+  root-scope arrival-order indices can exchange answers between branches as
+  upstream answers become available across steps. This does not test nested
+  scopes or change this decision. Version 1 requires distinct prompts when
+  concurrent calls need branch-specific answers.
 - Tentative because the feature it prepares for is undesigned. The scope's form
   (the empty string at the root; name plus argument hash for tasks) is a guess
   at what that design will need.

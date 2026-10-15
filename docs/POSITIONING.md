@@ -1,7 +1,9 @@
 # Positioning
 
-**Status:** working positioning, 2026-10-15. Nothing is implemented yet; every
-claim below about Treadle is a design target unless it links a measurement.
+**Status:** working positioning, 2026-10-15. The Stage 1 CLI is implemented with
+fake-model functional tests; real-harness trials are still pending. Claims below
+about usefulness and reliability remain design targets unless they link a
+measurement. See [Running Treadle](RUNNING.md) for supported behavior and limits.
 
 ## One line
 

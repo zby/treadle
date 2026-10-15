@@ -1,5 +1,9 @@
 # Runner B: review_loop.py in Pydantic AI
 
+> **Historical experiment.** Prototype commands and recorded output are retained
+> as measured, not current CLI instructions. Use `treadle` for the implemented
+> runner; see [Running Treadle](../RUNNING.md).
+
 All measured facts below come from runs of `runner_pydantic/test1.py` (Route 1) and
 `runner_pydantic/test2.py` (Route 2), via `uv run python ...` from the experiment root (venv is Python 3.13.1,
 not 3.12 as the contract says). `shared/review_loop.py` was read with `Path.read_text()` and never edited.

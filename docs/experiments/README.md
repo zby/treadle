@@ -1,16 +1,25 @@
 # Experiments
 
 Reports from the October 2026 feasibility experiments behind
-[ADR 001](../../adr/001-step-runner-for-pydantic-ai-workflows.md). Each report
-was written by the agent that ran the experiment; the coordinating session
-reran the main tests of each and got the same results. The experiment code,
-raw agent reports (`results/A.md` to `D.md`) and logs are in [code/](code/);
-paths in the reports are relative to it, and runs used its own `pyproject.toml`.
-Paths into the original session scratchpad (stores, `../scratch_d`) are not
-retained. The prototype CLI was called `bl` and Treadle was then named Beads
-Lite; the reports keep those names. Stage 1 ports the code that matters into
-`src/` (see [PLAN.md](../../PLAN.md)). `code/catalog.py` and `code/workflows/`
-at the top level were left by an agent and are not referenced by any report.
+[ADR 001](../../adr/001-step-runner-for-pydantic-ai-workflows.md), plus lessons
+from developing the current runner.
+
+- [Runner lessons](2026-10-runner-lessons.md): callback tracking, integrity,
+  cancellation, imports, exact text, test consolidation and observed runtimes.
+
+## Historical feasibility experiments
+
+Each report below was written by the agent that ran the experiment; the
+coordinating session reran the main tests of each and got the same results.
+These are the canonical copies; experiment code and recorded logs are in
+[code/](code/). Paths in these reports are relative to `code/`, and runs used its
+own `pyproject.toml`. Original session scratchpad stores are not retained.
+
+**Historical commands, not current usage:** these prototypes were named `bl`
+and used `complete`/`fail`. Their source and recorded output retain those names.
+The current CLI is **`treadle step`, `treadle claim`, `treadle commit`, and
+`treadle release`**; see [Running Treadle](../RUNNING.md). The current runner
+is in `src/treadle/`, separate from these feasibility experiments.
 
 All runs used fake models. No real model or harness sub-agent answered a prompt.
 

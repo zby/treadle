@@ -26,8 +26,9 @@ It leaves open what a commit records and what it may cover.
   replay.
 - Committing without a claim is allowed when no other worker holds a live one.
 
-Implementation status: design only ([DESIGN.md](../docs/DESIGN.md), "Prompts
-and answers"); PLAN.md stage 1.
+Implementation status: implemented in `src/treadle/store.py`; functional
+coverage is in [test_store.py](../tests/test_store.py), including auxiliary-file
+hashes, edited/deleted files, path escapes, symlinks and worker provenance.
 
 ## Basis
 
@@ -38,7 +39,9 @@ and answers"); PLAN.md stage 1.
   settle open choices; no argument beyond the ones under Alternatives:
   the name `commit`; no schema check at commit; commits without claims;
   files restricted to the call's directory.
-- No implementation or run has tested any of it.
+- The choice was made without runtime evidence. Stage 1 now includes functional
+  tests of the attestation rules, but these do not establish whether real workers
+  find hash-only and multi-file commits useful. That remains Stage 2 evidence.
 
 Evidence that would settle it: stage 1 and 2 runs showing whether workers
 produce extra files worth committing, whether hash mismatches occur and what

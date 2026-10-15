@@ -21,7 +21,7 @@ from catalog import CATALOG  # noqa: E402
 SCRIPT = (HERE / "analysis.py").read_text()
 PARAMS = {"type": "object", "properties": {"task": {"type": "string"}}, "required": ["task"]}
 INPUT_DECLS = "system: str\ncheckout_path: str\nsource_commit: str\nmethod_commit: str\nsource_files: list[str]\n"
-REPORT_CHARS = 12000  # size of each fake report, an assumption (see results/C.md)
+REPORT_CHARS = 12000  # size of each fake report, an assumption (see ../../2026-10-analysis-port.md)
 
 
 def build_stubs() -> str:

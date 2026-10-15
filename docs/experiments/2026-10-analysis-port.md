@@ -1,5 +1,9 @@
 # Porter C: code-base analysis (steps 2-9) as a portable Monty script
 
+> **Historical experiment.** Prototype commands and recorded output are retained
+> as measured, not current CLI instructions. Use `treadle` for the implemented
+> runner; see [Running Treadle](../RUNNING.md).
+
 ## What I ran
 
     cd experiment && uv run python analysis/check.py     # type check + 3 scenarios + failure + step-replay simulation

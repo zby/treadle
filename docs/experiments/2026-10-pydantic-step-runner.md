@@ -1,5 +1,9 @@
 # Runner D: bl step for ordinary Pydantic AI workflows
 
+> **Historical experiment.** Prototype commands and recorded output are retained
+> as measured, not current CLI instructions. Use `treadle` for the implemented
+> runner; see [Running Treadle](../RUNNING.md).
+
 ## Outcome
 
 It works. `pyd_step/review_loop.py` is a plain Pydantic AI workflow: three `Agent(...)`s, an
@@ -277,7 +281,7 @@ error: BlCallFailed: call 346ba8b489d1 (writer) failed: writer refused
 ```
 
 No orphan reviewer prompts were posted in this run. Main finished with the error before branches a and c
-reached their reviewer requests, and the Runner cancelled them. Phase 1 (A.md Q4a) did see orphans. This
+reached their reviewer requests, and the Runner cancelled them. The [Monty experiment](2026-10-monty-step-runner.md), Q4a, did see orphans. This
 depends on scheduling, so a harness should still never look for open work by scanning the store.
 
 ### 6. Quiescence: rule, mechanism, and non-agent awaits (`t6-quiescence.txt`)

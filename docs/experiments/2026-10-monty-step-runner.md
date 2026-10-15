@@ -1,5 +1,9 @@
 # Runner A: bl step runner on Monty
 
+> **Historical experiment.** Prototype commands and recorded output are retained
+> as measured, not current CLI instructions. Use `treadle` for the implemented
+> runner; see [Running Treadle](../RUNNING.md).
+
 ## Outcome
 
 The step runner works on Monty 1.1.0 for `shared/review_loop.py`, and the script is used unchanged. All

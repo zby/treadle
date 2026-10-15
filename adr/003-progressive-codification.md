@@ -21,9 +21,11 @@ Python. The workflow file does not change between levels. The CLI is designed
 for this: every duty is a command with defined exit codes, step output is stable
 and line-based and states the next action, and prompts are self-contained.
 
-Implementation status: design only ([DESIGN.md](../docs/DESIGN.md),
-"Progressive codification"); stage 1 tests a script-driven run with a fake
-worker, stage 2 records real orchestrator mistakes ([PLAN.md](../PLAN.md)).
+Implementation status: the CLI and the offline script driver
+[`scripts/fake_review.py`](../scripts/fake_review.py) implement the mechanical
+loop. [Functional tests](../tests/test_runner.py) compare the script-driven run
+with direct Pydantic AI execution. Stage 2 still needs to record real
+orchestrator mistakes ([PLAN.md](../PLAN.md)).
 
 ## Basis
 
