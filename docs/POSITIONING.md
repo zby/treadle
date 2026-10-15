@@ -1,20 +1,20 @@
 # Positioning
 
-**Status:** working positioning, 2026-10-15. The Stage 1 CLI is implemented with
-fake-model functional tests; real-harness trials are still pending. Claims below
-about usefulness and reliability remain design targets unless they link a
-measurement. See [Running Treadle](RUNNING.md) for supported behavior and limits.
+**Status:** early working prototype, with fake-model functional tests and live
+runs in Pi, Claude Code and Codex. The next trial covers a real
+coding task, typed review and parallel workers. See [Running Treadle](RUNNING.md)
+for supported behavior and limits.
 
 ## One line
 
 **Write an agent workflow once, as ordinary Pydantic AI code. Step it from
 Claude Code, Codex or pi, where the harness's own agents do the work, and run it
-natively in Pydantic AI when you are ready.**
+natively in Pydantic AI.**
 
 Short form: *your code is the graph; any harness is the runtime.* The first half
 is Samuel Colvin's ([The code IS the graph](https://x.com/samuelcolvin/status/2110055467007303729),
-2026-10-13); credit it where it is used. Treadle is not a Pydantic project and
-must not read as endorsed by Pydantic.
+2026-10-13); credit it where it is used. Treadle is an independent project, not
+affiliated with Pydantic.
 
 ## The name
 
@@ -60,30 +60,29 @@ sessions, and workers keep full freedom in how they produce the answer
 1. **Portable and resumable.** One workflow file runs under any harness and
    natively in Pydantic AI. Progress lives in a store of plain files, not in an
    agent's context, so any session or harness can continue a run, and
-   `treadle step` doubles as the status command.
+   `treadle step` doubles as the status command. A native Pydantic AI run starts
+   fresh; it cannot yet resume a step-mode store.
 2. **Progressive codification.** The orchestrator's job is small because the
    code makes every decision; when the agent slips, its duties move into hooks,
    then a driver script, then a native run, with the workflow unchanged
    ([ADR 003](../adr/003-progressive-codification.md)).
 3. **Build-system semantics.** A monadic build in the sense of *Build Systems à
    la Carte*: dependencies discovered by running the code, results stored under
-   content hashes, finished work never redone. The calls a workflow waits on are
-   a task list, so a tracker comes for free, without a configuration language
-   for workflows.
+   content hashes, matching committed answers reused. The calls a workflow waits
+   on are a task list, so a tracker comes for free, without a configuration
+   language for workflows.
 
 The tracker is the consequence, not the headline.
 
-## What it is not
+## Scope
 
-- **Not an agent framework.** Pydantic AI is the framework and the workflow
-  language. "Harness-independent" describes who runs the steps, not how the
-  workflow is written.
-- **Not a production durable-execution engine.** For long-running services use
-  Pydantic AI with Temporal (or DBOS, Prefect). Treadle is a bridge into that,
-  not a rival.
-- **Not a sandbox for model-written workflows.** That is Monty and Pydantic AI
-  Harness's `run_workflow`. Treadle runs trusted code people write and reuse.
-- **Not a scheduler, queue or server.** A CLI and a directory.
+- **Pydantic AI workflows.** Pydantic AI is the framework and the workflow
+  language; the harness supplies the workers.
+- **Local runs.** Treadle is a CLI and a directory on a local POSIX filesystem.
+  For long-running services, use Pydantic AI with Temporal, DBOS or Prefect.
+- **Trusted Python.** People write and reuse workflows with normal Python
+  access. Monty and Pydantic AI Harness's `run_workflow` offer sandboxed,
+  model-written workflows.
 
 ## Neighbours
 
@@ -97,15 +96,14 @@ The tracker is the consequence, not the headline.
 | Build tools (Make, Shake, Bazel, Luigi) | Dynamic dependencies, cached results | Same theory; tasks are agents and people, not deterministic commands |
 | Task trackers (Beads, Linear, Jira automation) | Tasks, dependencies, status | Treadle's tasks are what a workflow waits on; lifecycles are code, not rules |
 
-Claims in this table about other systems are from their documentation and the
-sources in ADR 001, not from comparative runs.
+The table draws on the systems' documentation and the sources in ADR 001.
 
-## Claims we cannot make yet
+## Next measurements and deferred work
 
-- That orchestrating agents follow step output reliably (stage 2 measures it).
-- That replay stays cheap for long workflows (memoized tasks are deferred).
-- That agents with Pydantic AI tools work under `treadle step` (not in version 1).
-- Any performance or cost comparison with other routes.
+- Stage 2 records orchestrator mistakes while following step output.
+- Long workflows need replay-cost measurements; memoized tasks are deferred.
+- Pydantic AI function tools are unavailable in step mode; workers use their
+  harness's tools instead.
 
 ## Open questions
 

@@ -24,8 +24,10 @@ and line-based and states the next action, and prompts are self-contained.
 Implementation status: the CLI and the offline script driver
 [`scripts/fake_review.py`](../scripts/fake_review.py) implement the mechanical
 loop. [Functional tests](../tests/test_runner.py) compare the script-driven run
-with direct Pydantic AI execution. Stage 2 still needs to record real
-orchestrator mistakes ([PLAN.md](../PLAN.md)).
+with direct Pydantic AI execution. Live trials have since run in Pi, Claude Code
+and Codex; [Runner lessons](../docs/experiments/2026-10-runner-lessons.md#live-trials)
+records the Pi one-call trial. Stage 2 still needs to record orchestrator mistakes
+on real coding work, typed review and parallel workers ([PLAN.md](../PLAN.md)).
 
 ## Basis
 
@@ -35,9 +37,8 @@ orchestrator mistakes ([PLAN.md](../PLAN.md)).
   the failure names a specific duty that code can take over.
 - Deduction: each level is possible because every duty is already a CLI command
   and the workflow is ordinary Pydantic AI code.
-- Missing evidence: no real orchestrator has run a workflow. How often agents
-  fail at which duty, and whether hooks in each harness can take them over, is
-  unknown until stage 2.
+- At the decision, no real orchestrator had run a workflow. Stage 2 will record
+  how often agents fail at each duty and whether harness hooks can take over.
 
 ## Alternatives and consequences
 

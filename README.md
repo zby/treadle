@@ -24,10 +24,9 @@ Python workflow → Treadle prompts → orchestrator → harness workers
                 ← committed answers ←───────────┘
 ```
 
-> **Status:** Early working prototype, exercised with fake models only. No real
-> model or harness sub-agent has answered a workflow prompt yet. Real-harness
-> usefulness and reliability are still unmeasured. Treadle is an independent
-> project, not affiliated with Pydantic.
+> **Status:** Early working prototype, tested with fake models and live agents
+> in Pi, Claude Code and Codex. Treadle is an independent project, not affiliated
+> with Pydantic.
 
 ## One call, end to end
 
@@ -55,6 +54,15 @@ uv run treadle step examples/explain.py:workflow \
   --inputs '{"topic": "a loom"}' --store /tmp/treadle-explain-demo
 ```
 
+For an unattended harness loop, preapprove the command prefix `uv run treadle`
+in the harness's command-permission settings. This covers `step`, `claim`,
+`commit` and `release`; the worker also needs permission to write answer files
+in the store. If `uv` itself cannot start inside the harness sandbox (for
+example, a snap-installed `uv` reports a `snap-confine` capability error), the
+approval must allow execution outside that sandbox. This resolved the launcher
+failure in a live harness run. Only approve workflows you trust: `step` executes
+the supplied Python workflow.
+
 Use a fresh store directory for a new demonstration. The command prints the
 call's key and the path to `prompt.md`, then exits **2**: waiting for an answer is
 expected, not a failure. Read the prompt for instructions and the answer path.
@@ -70,9 +78,9 @@ uv run treadle step examples/explain.py:workflow \
 ```
 
 With that answer, the final step prints `result "A loom weaves cloth."` and a
-`done:` line, exiting **0**. This is a hand-supplied answer, not a real-model result.
-A draft alone is not delivered: `commit` records its hashes. Do not change
-committed files.
+`done:` line, exiting **0**. This example uses a hand-supplied answer.
+`commit` records its hashes so replay can deliver it; drafts alone are not
+delivered. Do not change committed files.
 
 Claims are optional when answering alone. With parallel workers, each worker
 first claims a call using its own unique ID; see the
@@ -121,7 +129,7 @@ step-mode store. See the [native example](docs/RUNNING.md#start-with-one-agent).
 
 Keep replay deterministic. Put side effects in [cached operations](docs/RUNNING.md#cache-operations-not-whole-workflows)
 and make them idempotent: a crash or exception before recording a result can
-cause another execution. There is no exactly-once guarantee.
+cause another execution.
 
 Treadle runs **trusted Python on a local POSIX filesystem**, not in a sandbox.
 Step mode does not execute Pydantic AI function tools; these are distinct from

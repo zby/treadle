@@ -2,9 +2,10 @@
 
 **Status:** version 1 design and Stage 1 implementation, 2026-10-15. The runner
 is in `src/treadle/`, with functional fake-model tests in `tests/` and an offline
-driver in `scripts/fake_review.py`. Real harness trials remain Stage 2 of
-[PLAN.md](../PLAN.md). See [Running Treadle](RUNNING.md) for commands and supported
-inputs. Earlier feasibility evidence is in the
+driver in `scripts/fake_review.py`. Live agents have answered prompts in Pi,
+Claude Code and Codex. Stage 2 of [PLAN.md](../PLAN.md) covers a
+real coding task, typed review and parallel workers. See [Running Treadle](RUNNING.md)
+for commands and supported inputs. Earlier feasibility evidence is in the
 [prototype report](experiments/2026-10-pydantic-step-runner.md); the decision and
 alternatives are in
 [ADR 001](../adr/001-step-runner-for-pydantic-ai-workflows.md).
@@ -115,9 +116,9 @@ per step, mostly importing Pydantic AI.
 These limits apply to version 1. Deferred work is tracked in
 [PLAN.md](../PLAN.md#later-each-on-a-demonstrated-need).
 
-- **Not exactly-once execution.** A cached operation can run again after an
+- **Cached operations can repeat.** An operation can run again after an
   exception or a crash between its side effect and recording its result.
-  Operations must be idempotent; caching alone does not make side effects safe.
+  Operations must be idempotent.
 - **No stable branch identity for identical concurrent calls.** Occurrence
   indices follow request arrival order within a scope. As upstream answers
   become available across steps, identical downstream calls can exchange their
@@ -129,9 +130,8 @@ These limits apply to version 1. Deferred work is tracked in
   establish a consistent frontier between concurrent replays. A separate
   `.step.lock` guard rejects overlapping steps and `use_store` runs. Workers may
   still claim and commit while a step runs.
-- **No guarantee that repository changes are preserved by an answer commit.**
-  Commits attest only files inside the call's directory, not code a worker edits
-  elsewhere. Repository changes need their own version-control discipline.
+- **Answer commits cover files inside the call's directory.** Code a worker
+  edits elsewhere needs its own version-control commit.
 
 ## Rules for workflows
 
@@ -148,11 +148,10 @@ These limits apply to version 1. Deferred work is tracked in
   step. Use finalizers for finite resource cleanup, not success-only effects.
   Finite cached cleanup operations retain normal recording/warning/integrity
   behavior. Cleanup agent runs are prohibited. Model requests reaching the
-  adapter during teardown are refused, but this is not a pre-run barrier:
-  system-prompt and instruction callbacks can execute cached operations before
-  the adapter, even if the run subsequently fails and that failure is caught.
-  There is no cleanup-agent side-effect prevention guarantee. Do not suppress
-  cancellation or create detached cleanup tasks. See
+  adapter during teardown are refused. System-prompt and instruction callbacks
+  can execute cached operations before the adapter, even if the run subsequently
+  fails and that failure is caught. Do not suppress cancellation or create
+  detached cleanup tasks. See
   [cancellation guidance](RUNNING.md#synchronous-callbacks-and-cancellation).
 - Workflows are trusted Python, not sandboxed. A synthetic module name avoids
   clobbering `sys.modules` by filename; temporary sibling import support still
@@ -216,9 +215,9 @@ silently changing a past result. Replay remembers store I/O and decoding failure
 independently of workflow exception handlers; a caught integrity error cannot
 produce a successful result or waiting frontier. `use_store` also raises at its
 context boundary. Worker refusals remain catchable `CallFailed` exceptions.
-These checks assume intact commit metadata and are not protection against
-malicious metadata replacement or every filesystem race. Under that assumption,
-workflow code may read committed files and gets the same content on every replay.
+These checks require intact, trusted commit metadata and a local POSIX store.
+Keep committed files and metadata unchanged so workflow code reads the same
+content on every replay.
 Replacing an answer is a future invalidation command, not an edit.
 
 ## Answer identity

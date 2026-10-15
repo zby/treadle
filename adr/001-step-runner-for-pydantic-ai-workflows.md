@@ -65,8 +65,10 @@ over. The name is
 Implementation status: the Stage 1 runner, commit attestation, claims and
 cached operations are implemented in `src/treadle/`, with functional fake-model
 tests in `tests/` and an offline driver in `scripts/fake_review.py`.
-[PLAN.md](../PLAN.md) tracks acceptance and the Stage 2 real-harness trial. No
-run with real models or real harness sub-agents has happened yet.
+Live agents have since answered workflow prompts in Pi, Claude Code and Codex;
+[Runner lessons](../docs/experiments/2026-10-runner-lessons.md#live-trials)
+records the Pi one-call trial. [PLAN.md](../PLAN.md) tracks the Stage 2 real coding
+task, typed review and parallel-worker trial.
 
 ## Basis
 
@@ -117,8 +119,8 @@ Preferences: the operator prefers Pydantic AI for its depth and support, and an
 in-process mechanism because the cache must serve operations other than model
 calls.
 
-Missing evidence: real models, real harness sub-agents, long workflows, agents
-with tools, Python versions other than 3.13.
+Missing evidence at the decision: real models, real harness sub-agents, long
+workflows, agents with tools, Python versions other than 3.13.
 
 ## Alternatives and consequences
 

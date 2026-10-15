@@ -1,9 +1,9 @@
 # Runner lessons from fake-model development
 
 October 2026. Treadle is an early working prototype. These findings come from
-local CLI workflows and direct Pydantic AI runs with fake models, not a real
-harness trial. Current semantics live in [DESIGN](../DESIGN.md); operational
-guidance lives in [Running Treadle](../RUNNING.md).
+local CLI workflows and direct Pydantic AI runs with fake models. A later
+[live-trial observation](#live-trials) follows below. Current semantics live in
+[DESIGN](../DESIGN.md); operational guidance lives in [Running Treadle](../RUNNING.md).
 
 ## Callbacks must be visible to the scheduler
 
@@ -28,10 +28,9 @@ and decoding failures independently of workflow handlers. Step publication and
 join. Worker `CallFailed` refusals remain catchable.
 
 Edited or missing answers and auxiliary files must fail replay even after a
-caught error. This assumes intact, trusted commit metadata; it is not protection
-against malicious metadata replacement or every filesystem race, nor rollback
-of effects already performed. Work using `use_store` must finish before context
-exit. See [answer rules](../RUNNING.md#answer-files-and-commits).
+caught error. This requires intact, trusted commit metadata. Effects already
+performed remain. Work using `use_store` must finish before context exit.
+See [answer rules](../RUNNING.md#answer-files-and-commits).
 
 ## Cancellation cleanup is not success
 
@@ -41,14 +40,13 @@ Finite cached cleanup can record results and emit uncertainty warnings;
 integrity failures and uncaught task-finalizer errors prevent publication.
 Keep success-only effects after the required answers arrive.
 
-Cleanup agent runs are unsupported. Adapter rejection is not a pre-callback
-barrier: a system-prompt or instruction callback can perform a cached operation
-before the model request is rejected. A probe recorded such an effect, then
-caught a callback exception before the adapter and still published the original
-waiting frontier. Letting the callback return instead reached adapter refusal,
-but the effect had already happened. Do not infer side-effect prevention from
-that refusal. Finalizers must be finite; do not suppress cancellation or spawn
-detached cleanup tasks. Explicitly close resources rather than relying on GC.
+Cleanup agent runs are unsupported. A system-prompt or instruction callback can
+perform a cached operation before the model request is rejected. A probe recorded
+such an effect, then caught a callback exception before the adapter and still
+published the original waiting frontier. Letting the callback return instead reached adapter refusal,
+but the effect had already happened. Finalizers must be finite; do not suppress
+cancellation or spawn detached cleanup tasks. Explicitly close resources rather
+than relying on GC.
 
 ## Loading and text have observable semantics
 
@@ -77,7 +75,7 @@ Keep distinct coverage for replay/fan-out, typed retries, failures, hash checks,
 concurrent claims, cache uncertainty, unsupported awaits, text/JSONL rendering
 and the installed console entrypoint. See the maintained [tests](../../tests/).
 Identical concurrent calls can still exchange branch-specific answers as arrival
-order changes; use distinct prompts. Tests demonstrate this limit, not a solution.
+order changes; use distinct prompts.
 
 Observed full-suite times on Linux/CPython 3.13.1 with locked Pydantic AI 2.54.0:
 
@@ -87,15 +85,26 @@ Observed full-suite times on Linux/CPython 3.13.1 with locked Pydantic AI 2.54.0
 | After consolidation | 64 | about 143–149 s |
 | After ten correctness regressions | 74 | about 172–174 s |
 
-These are separate development runs, not a controlled benchmark. Fewer pytest
-items mostly reflected consolidation, not fewer functional cases. These suite
-timings do not isolate import and subprocess costs.
+These are separate local development runs; elapsed times vary with the
+environment. Fewer pytest items mostly reflected shared setup while retaining
+functional cases. Each timing includes imports and subprocesses.
 
-## Still untested
+## Live trials
 
-No real model or harness sub-agent has answered a prompt. Real-worker prompt
-clarity, orchestration reliability, production idempotency, long-run performance,
-other Python versions/platforms and network filesystems remain untested. Current
-locking targets local POSIX filesystems. Tests support attestation mechanics,
-not the usefulness of hash-only commits; they do not settle nested scopes or
-external naming conflicts. The next work is the [task-tracker trial](../../PLAN.md#stage-2-a-tracker-trial-on-real-work).
+In Pi, `examples/explain.py` ran with the topic `bicycle gears`. The initial step
+exited 2 with one call. After the call was claimed, a separate `pi --print`
+worker, explicitly selected as `openai/gpt-6.1-sol`, read the prompt, wrote
+`answer.md` and committed it itself. The next step exited 0. Repeating that step
+returned the same result without another worker call.
+
+The user also reported live runs in Claude Code and Codex.
+
+## Next work
+
+Stage 2's [task-tracker trial](../../PLAN.md#stage-2-a-tracker-trial-on-real-work)
+will cover a real coding task, typed review and parallel workers, recording
+prompt clarity problems and orchestrator mistakes. Long-run replay cost and
+idempotency in real operations still need observation. Current locking supports
+local POSIX filesystems; other Python versions and platforms remain untested.
+The usefulness of hash-only commits, nested scopes and external naming conflicts
+remain open questions.

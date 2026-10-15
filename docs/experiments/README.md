@@ -21,7 +21,8 @@ The current CLI is **`treadle step`, `treadle claim`, `treadle commit`, and
 `treadle release`**; see [Running Treadle](../RUNNING.md). The current runner
 is in `src/treadle/`, separate from these feasibility experiments.
 
-All runs used fake models. No real model or harness sub-agent answered a prompt.
+The historical feasibility runs below used fake models. Current live-trial
+observations are in [Runner lessons](2026-10-runner-lessons.md#live-trials).
 
 | Report | Question | Outcome |
 |---|---|---|

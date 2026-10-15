@@ -13,16 +13,17 @@ second example in `examples/review_loop.py`, and an
 offline driver in `scripts/fake_review.py`. Usage and supported limits are in
 [Running Treadle](docs/RUNNING.md). Earlier prototype evidence is in the
 [experiment report](docs/experiments/2026-10-pydantic-step-runner.md).
-No real model or harness sub-agent has answered a workflow prompt yet.
-
-This is an early working prototype exercised with fake models, not a real-harness
-trial. [Runner lessons](docs/experiments/2026-10-runner-lessons.md) collects the
-technical findings and observed test runtimes. Stage 2 remains planned.
+The early working prototype has also run with live agents in Pi, Claude Code and
+Codex. In Pi, a separate worker answered and committed the
+single call from `examples/explain.py`; the next step completed and a repeat
+replayed the same result. [Runner lessons](docs/experiments/2026-10-runner-lessons.md)
+collects the technical findings, live-trial observation and observed test runtimes.
+Stage 2's real coding task, typed review and parallel-worker trial remain planned.
 
 ## Stage 1: the step runner with claims
 
 The [design](docs/DESIGN.md) defines runtime semantics and
-[non-guarantees](docs/DESIGN.md#non-guarantees-and-known-limits).
+[known limits](docs/DESIGN.md#non-guarantees-and-known-limits).
 The current commands are `treadle step`, `treadle claim`, `treadle commit`, and
 `treadle release`.
 

@@ -3,7 +3,7 @@
 Treadle runs trusted Python workflows. Use a local POSIX filesystem store
 (locking uses `fcntl`; Windows is not supported) and keep workflow code
 deterministic and free of side effects outside cached operations.
-See the [design's non-guarantees](DESIGN.md#non-guarantees-and-known-limits).
+See the [design's known limits](DESIGN.md#non-guarantees-and-known-limits).
 
 ## Try it without a model API
 
@@ -180,9 +180,8 @@ Names and argument serialization are durable identity. Positional and keyword
 spelling is preserved: `read_revision("repository/")` and
 `read_revision(repository="repository/")` use different keys. Omitted defaults
 and explicitly supplied defaults also differ; keyword ordering does not.
-Keep calling conventions stable to reuse stored results. No signature binding
-or key-format change is involved. Results must be JSON-serializable; a return
-annotation is used to restore the type from JSON.
+Keep calling conventions stable to reuse stored results. Results must be
+JSON-serializable; a return annotation is used to restore the type from JSON.
 The first stored execution and subsequent replays use the same round trip.
 Without an active store the decorated function runs plainly. Store read/write
 or cached-result decoding failures are remembered for the whole replay:
@@ -190,11 +189,11 @@ or cached-result decoding failures are remembered for the whole replay:
 Finish and join all tasks/threads using that store before leaving the context;
 errors from work outliving the context cannot retroactively fail its exit.
 
-Cached operations are **at least once**, not exactly once. Make side effects
-idempotent. Exceptions are not cached, and an unfinished recorded attempt causes
-an uncertainty warning when retried. An async cached operation counts as busy
-until it finishes: do not wrap an agent lifecycle awaiting external answers in
-`@cached`.
+A crash before recording a result can cause a cached operation to run again.
+Make side effects idempotent. Exceptions are not cached, and an unfinished
+recorded attempt causes an uncertainty warning when retried. An async cached
+operation counts as busy until it finishes: do not wrap an agent lifecycle
+awaiting external answers in `@cached`.
 
 Only agent runs, cached operations, tasks/gathers of them, `asyncio.sleep` and
 `asyncio.to_thread` are supported awaits in workflow code. Put other I/O inside a
@@ -223,22 +222,18 @@ answers have arrived, and keep durable side effects in idempotent cached
 operations. Finite cached operations in task finalizers are recorded normally;
 uncertain-attempt warnings are emitted, and swallowed store-integrity failures
 still fail the step. An uncaught finalizer exception also fails the step rather
-than publishing the earlier snapshot. This is not a rollback: effects already
-performed are not undone.
+than publishing the earlier snapshot. Effects already performed remain.
 
-Do not start agent runs during cancellation cleanup. Adapter refusal is **not a
-pre-run barrier**: system-prompt and instruction callbacks can execute and
-perform cached operations before a model request reaches the adapter. Those
-effects can occur even if the run subsequently fails and the finalizer catches
-that failure; there is no cleanup-agent side-effect prevention guarantee.
+Do not start agent runs during cancellation cleanup. System-prompt and
+instruction callbacks can execute cached operations before a model request
+reaches the adapter. Those effects can occur even if the run subsequently fails
+and the finalizer catches that failure.
 Pydantic AI may instead cancel such a run earlier. Any model request that does
 reach the adapter during teardown is refused, even if an answer was previously
-committed; it will not become an additional worker task. Cleanup agent runs
-remain prohibited; finite cached cleanup operations remain supported as described
-above. Do not suppress cancellation and continue the workflow, spawn detached
-cleanup tasks, or wait indefinitely in a finalizer. Explicitly close async generators/context managers
-inside the workflow rather than relying on garbage-collection finalizers. These
-are trusted-Python lifecycle constraints, not a general cancellation API.
+committed; it will not become an additional worker task. Do not suppress
+cancellation and continue the workflow, spawn detached cleanup tasks, or wait
+indefinitely in a finalizer. Explicitly close async generators/context managers
+inside the workflow rather than relying on garbage-collection finalizers.
 
 ## Trusted Python and imports
 
@@ -259,10 +254,9 @@ The previous search path is restored afterwards. Normal Python import caching
 still applies to sibling modules: imported dependencies remain in `sys.modules`,
 and a sibling can shadow a not-yet-imported dependency. Avoid sibling names that
 collide with stdlib/dependency names; prefer a normal uniquely named package for
-larger workflows. This loader is not a package-isolation mechanism or sandbox;
-workflows can deliberately mutate Python globals, modules and the filesystem.
+larger workflows. Workflows are trusted Python and can mutate globals, modules
+and the filesystem.
 
-Likewise, hash attestations assume intact, trusted store metadata. They detect
-changed/missing files named by a commit, not malicious replacement/deletion of
-that commit and its hashes, nor all filesystem races. Integrity failure prevents
-successful publication; it does not roll back earlier workflow effects.
+Hash attestations require intact, trusted store metadata. Keep commit records
+and their files unchanged. Integrity failure stops publication; earlier workflow
+effects remain.
