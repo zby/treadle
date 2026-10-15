@@ -153,7 +153,6 @@ is a pedal that drives a loom one step at a time.
 - Next: [Running Treadle](docs/RUNNING.md) for commands, API and workflow rules.
 - Internals: [Design](docs/DESIGN.md), then [decision records](adr/README.md) for reasons.
 - Next work: [Plan](PLAN.md).
-- Optional background: [Experiments](docs/experiments/README.md).
 - Contributing: [Contributor instructions](AGENTS.md).
 
 ## License

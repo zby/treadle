@@ -6,7 +6,7 @@ The early working prototype is described in the [README](README.md).
 [Running Treadle](docs/RUNNING.md) defines usage and workflow rules;
 [tests/](tests/) contains the functional acceptance cases, including CLI/direct
 Pydantic AI parity and correctness regressions. Contributor checks are in
-[AGENTS.md](AGENTS.md). Past observations belong in [Experiments](docs/experiments/README.md).
+[AGENTS.md](AGENTS.md).
 
 ## Stage 2: a tracker trial on real work
 
@@ -48,7 +48,6 @@ Each orchestrator mistake is a candidate for moving a duty into a hook or script
 - Ready-made hooks and driver scripts, once stage 2 shows which duties fail.
 - Recording which model produced an answer (the worker is recorded via claims).
 - An invalidation command.
-- Model-written workflows in the Monty subset (`DynamicWorkflow`).
 - A Temporal runner for the same workflow files.
 - Sharing answers between stores (constructive traces across runs).
 - Memoized tasks (restarting at task granularity), when stage 2 replays get slow

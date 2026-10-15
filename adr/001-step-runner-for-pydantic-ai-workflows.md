@@ -65,18 +65,15 @@ over. The name is
 
 ## Basis
 
-Observations, from the [experiments](../docs/experiments/README.md), all with
-fake models (maintained functional coverage is in [tests/](../tests/)):
+Historical fake-model prototypes showed that ordinary Pydantic AI workflow code
+could run unchanged directly and under a step runner with equal results and typed
+outputs. They also showed that without an occurrence index, repeated identical
+calls reused an answer rather than asking again, changing loop behaviour from
+Pydantic AI.
 
-- Ordinary Pydantic AI workflow code ran unchanged both directly and under a
-  step-runner prototype, with equal results; 6 steps for the example; typed
-  answers came back as real model instances; 30 replays were identical
-  ([report](../docs/experiments/2026-10-pydantic-step-runner.md)).
-- A cached side-effecting operation ran exactly once over a multi-step run; the
-  same operation uncached ran on every replay (same report).
-- Without an occurrence index, an identical repeated call returned its stored
-  answer instead of asking again, so loops behaved differently from Pydantic AI
-  ([Monty runner report](../docs/experiments/2026-10-monty-step-runner.md)).
+Maintained functional cases cover CLI/direct parity, typed outputs, replay and
+repeated calls in [test_runner.py](../tests/test_runner.py), and cached operations
+in [test_cache.py](../tests/test_cache.py).
 
 Source readings (not runs):
 
@@ -143,10 +140,10 @@ workflows, agents with tools, Python versions other than 3.13.
 - **A from-scratch engine with its own decorators.** Rejected in favour of
   ordinary Pydantic AI code, which runs natively in Pydantic AI as well.
 - **Workflows as Monty-subset scripts, runnable in `DynamicWorkflow`.**
-  Feasible: one script ran in both. Not the base, because Monty is a sandbox
-  for model-written code; trusted workflows pay for it in lost imports, dicts
-  instead of typed objects, and work moved out of the script. Kept as a later
-  option for model-written workflows.
+  Rejected: workflows are operator-accepted ordinary Python, so they do not need
+  a sandbox for model-written code. Monty's restricted imports, dicts instead of
+  typed objects, and work moved out of the script add costs without serving this
+  scope.
 - **An HTTP gateway imitating a model API.** Would serve any framework, but
   needs a server per step and cannot cache non-model operations in process.
 - **Pydantic AI's durable-execution engine API.** Per agent run only; the
