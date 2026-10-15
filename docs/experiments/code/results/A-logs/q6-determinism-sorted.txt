@@ -1,0 +1,4 @@
+distinct call/resolve traces: 1
+50 x call0:writer:60524c call1:writer:5cf34f call2:writer:757d9d resolve[0, 1, 2] call3:reviewer:8e28d0 call4:reviewer:a75c38 call5:reviewer:402775 resolve[3, 4, 5] call6:writer:075b8c resolve[6] call7:reviewer:a39072 resolve[7] call8:summarizer:70f1be resolve[8]
+distinct outputs: 1
+pending_call_ids orders seen: {(0, 1, 2): 10, (4, 3, 5): 11, (6,): 50, (7,): 50, (8,): 50, (1, 0, 2): 7, (0, 2, 1): 7, (3, 4, 5): 8, (3, 5, 4): 8, (1, 2, 0): 11, (4, 5, 3): 8, (2, 1, 0): 4, (5, 3, 4): 9, (2, 0, 1): 11, (5, 4, 3): 6}

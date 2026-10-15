@@ -1,0 +1,16 @@
+$ bl step pyd_step/review_loop.py:workflow --inputs '{"topics":["a","b","c"],"max_rounds":2}' --store $S/t2h   (human mode, first step)
+346ba8b489d1 writer     ../scratch_d/t2h/346ba8b489d10d2a7d50615981d219a5e20614bd63299c356602e0a9c1947131/prompt.md
+4d9c7decd285 writer     ../scratch_d/t2h/4d9c7decd285c9daa15554d934b3cea075f75ed938bed40c018168ab242b0116/prompt.md
+e730df309faf writer     ../scratch_d/t2h/e730df309faf5a50d1b73eecae16a48751cac5a7f64b14b03778b9a836ad0973/prompt.md
+waiting: 3 open call(s)
+exit=2
+$ orchestrator.py pyd_step/review_loop.py:workflow $S/t2 '{"topics":["a","b","c"],"max_rounds":2}'
+step 1: exit 2; open: 346ba8b4 writer, 4d9c7dec writer, e730df30 writer
+step 2: exit 2; open: 225a2c09 reviewer, 3c7d4c33 reviewer, 6de1bad1 reviewer
+step 3: exit 2; open: 6f7b055e writer
+step 4: exit 2; open: 12651f9f reviewer
+step 5: exit 2; open: 7970f3e1 summarizer
+step 6: exit 0; open: 
+{"status": "done", "result": {"sections": [{"topic": "a", "text": "Paragraph about a.", "rounds": 0}, {"topic": "b", "text": "Paragraph about b (revised).", "rounds": 1}, {"topic": "c", "text": "Paragraph about c.", "rounds": 0}], "summary": "SUMMARY: 3 paragraphs."}}
+exit=0
+final result equal to the direct run's: True

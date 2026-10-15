@@ -1,0 +1,10 @@
+distinct call/resolve traces: 6
+9 x call0:writer:60524c call1:writer:5cf34f call2:writer:757d9d resolve[0, 1, 2] call3:reviewer:402775 call4:reviewer:8e28d0 call5:reviewer:a75c38 resolve[3, 4, 5] call6:writer:075b8c resolve[6] call7:reviewer:a39072 resolve[7] call8:summarizer:70f1be resolve[8]
+13 x call0:writer:60524c call1:writer:5cf34f call2:writer:757d9d resolve[0, 1, 2] call3:reviewer:a75c38 call4:reviewer:402775 call5:reviewer:8e28d0 resolve[3, 4, 5] call6:writer:075b8c resolve[6] call7:reviewer:a39072 resolve[7] call8:summarizer:70f1be resolve[8]
+4 x call0:writer:60524c call1:writer:5cf34f call2:writer:757d9d resolve[0, 1, 2] call3:reviewer:402775 call4:reviewer:a75c38 call5:reviewer:8e28d0 resolve[3, 4, 5] call6:writer:075b8c resolve[6] call7:reviewer:a39072 resolve[7] call8:summarizer:70f1be resolve[8]
+4 x call0:writer:60524c call1:writer:5cf34f call2:writer:757d9d resolve[0, 1, 2] call3:reviewer:a75c38 call4:reviewer:8e28d0 call5:reviewer:402775 resolve[3, 4, 5] call6:writer:075b8c resolve[6] call7:reviewer:a39072 resolve[7] call8:summarizer:70f1be resolve[8]
+6 x call0:writer:60524c call1:writer:5cf34f call2:writer:757d9d resolve[0, 1, 2] call3:reviewer:8e28d0 call4:reviewer:402775 call5:reviewer:a75c38 resolve[3, 4, 5] call6:writer:075b8c resolve[6] call7:reviewer:a39072 resolve[7] call8:summarizer:70f1be resolve[8]
+14 x call0:writer:60524c call1:writer:5cf34f call2:writer:757d9d resolve[0, 1, 2] call3:reviewer:8e28d0 call4:reviewer:a75c38 call5:reviewer:402775 resolve[3, 4, 5] call6:writer:075b8c resolve[6] call7:reviewer:a39072 resolve[7] call8:summarizer:70f1be resolve[8]
+distinct outputs: 1
+pending_call_ids orders seen: {(2, 0, 1): 9, (5, 3, 4): 16, (6,): 50, (7,): 50, (8,): 50, (1, 2, 0): 13, (2, 1, 0): 4, (5, 4, 3): 5, (1, 0, 2): 4, (4, 5, 3): 8, (3, 4, 5): 8, (0, 2, 1): 6, (3, 5, 4): 7, (0, 1, 2): 14, (4, 3, 5): 6}
+     10 ba8c3387e777ba2ccf93f642d69c07d9  -

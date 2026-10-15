@@ -1,0 +1,42 @@
+$ bl step wf_probes.py:sleepy (fresh store)
+274e339ab03b writer     ../scratch_d/t6-sleepy/274e339ab03ba0d8df9d78ccbf2fec1dcd6d0bf7cf2c31bfdbc552be832f1b63/prompt.md
+866c3271627a writer     ../scratch_d/t6-sleepy/866c3271627a2838925c198dcfe8cd0e482c0f7a29ba56f90536b6ac69ec2013/prompt.md
+waiting: 2 open call(s)
+Command exited with non-zero status 2
+wall 0.88s
+exit=2
+$ bl step wf_probes.py:threaded (fresh store)
+274e339ab03b writer     ../scratch_d/t6-threaded/274e339ab03ba0d8df9d78ccbf2fec1dcd6d0bf7cf2c31bfdbc552be832f1b63/prompt.md
+866c3271627a writer     ../scratch_d/t6-threaded/866c3271627a2838925c198dcfe8cd0e482c0f7a29ba56f90536b6ac69ec2013/prompt.md
+waiting: 2 open call(s)
+Command exited with non-zero status 2
+wall 0.86s
+exit=2
+$ bl step wf_probes.py:stuck (fresh store)
+866c3271627a writer     ../scratch_d/t6-stuck/866c3271627a2838925c198dcfe8cd0e482c0f7a29ba56f90536b6ac69ec2013/prompt.md
+waiting: 1 open call(s)
+Command exited with non-zero status 2
+wall 0.75s
+exit=2
+$ bl step wf_probes.py:stuck (after completing the open call)
+error: workflow is stuck: nothing runnable and no open agent calls
+exit=1
+$ bl step wf_probes.py:socket_io_cached --inputs '{"delay": 0.5}' (fresh store)
+274e339ab03b writer     ../scratch_d/t6-sockc/274e339ab03ba0d8df9d78ccbf2fec1dcd6d0bf7cf2c31bfdbc552be832f1b63/prompt.md
+866c3271627a writer     ../scratch_d/t6-sockc/866c3271627a2838925c198dcfe8cd0e482c0f7a29ba56f90536b6ac69ec2013/prompt.md
+waiting: 2 open call(s)
+Command exited with non-zero status 2
+wall 1.33s
+exit=2
+$ bl step wf_probes.py:socket_io --inputs '{"delay": 0.05}' (fresh store)
+866c3271627a writer     ../scratch_d/t6-sock0.05/866c3271627a2838925c198dcfe8cd0e482c0f7a29ba56f90536b6ac69ec2013/prompt.md
+waiting: 1 open call(s)
+Command exited with non-zero status 2
+wall 0.83s
+exit=2
+$ bl step wf_probes.py:socket_io --inputs '{"delay": 0.5}' (fresh store)
+866c3271627a writer     ../scratch_d/t6-sock0.5/866c3271627a2838925c198dcfe8cd0e482c0f7a29ba56f90536b6ac69ec2013/prompt.md
+waiting: 1 open call(s)
+Command exited with non-zero status 2
+wall 1.32s
+exit=2

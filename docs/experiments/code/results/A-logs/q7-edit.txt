@@ -1,0 +1,28 @@
+step 1: exit 2, 3 open:
+  53bbb5acf36f reviewer   'Critically review this paragraph about c.' -> ok: {"accepted": true}
+  7843c9dfd4f5 reviewer   'Critically review this paragraph about a.' -> ok: {"accepted": true}
+  80efaa8586b4 reviewer   'Critically review this paragraph about b.' -> ok: {"accepted": false, "problems": ["too vague about 
+step 2: exit 2, 1 open:
+  815f2c27043b reviewer   'Critically review this paragraph about b.' -> ok: {"accepted": true}
+step 3: exit 0
+{
+  "sections": [
+    {
+      "topic": "a",
+      "text": "DRAFT1 a",
+      "rounds": 0
+    },
+    {
+      "topic": "b",
+      "text": "DRAFT2 b",
+      "rounds": 1
+    },
+    {
+      "topic": "c",
+      "text": "DRAFT1 c",
+      "rounds": 0
+    }
+  ],
+  "summary": "SUMMARY of DRAFT1 a, DRAFT2 b, DRAFT1 c"
+}
+

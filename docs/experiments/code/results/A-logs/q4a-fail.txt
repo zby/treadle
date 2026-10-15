@@ -1,0 +1,11 @@
+step 1: exit 2, 3 open:
+  5cf34fab4759 writer     'Write one paragraph about b.' -> fail: writer refused for b
+  60524c3ac3e7 writer     'Write one paragraph about a.' -> ok: DRAFT1 a
+  757d9dc37998 writer     'Write one paragraph about c.' -> ok: DRAFT1 c
+step 2: exit 1
+Traceback (most recent call last):
+  File "<python-input-0>", line 12, in draft_and_review
+    text = await writer(task=f"Write one paragraph about {topic}.")
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+RuntimeError: writer refused for b
+

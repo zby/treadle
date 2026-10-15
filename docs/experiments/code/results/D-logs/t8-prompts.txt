@@ -1,0 +1,62 @@
+$ bl step wf_probes.py:tooled
+5fbb67fd189d counter    ../scratch_d/t8/5fbb67fd189d066ae03439bf5db21d3686f8c9dad9ac539cc2f803f533c75d0d/prompt.md
+waiting: 1 open call(s)
+exit=2
+# Call to agent `counter`
+
+## Instructions
+
+You count words.
+
+## User prompt
+
+How many words are in 'a b c'?
+
+## Tools (unavailable)
+
+The agent has these tools, but bl does not run them. Answer without them:
+
+- `count_words`: Count the words in a text.
+
+## Answer format
+
+Answer with plain text; the whole file is the answer.
+
+$ cat <reviewer prompt.md from the t2 store, a review of topic b>
+# Call to agent `reviewer`
+
+## Instructions
+
+You review a paragraph for accuracy and clarity. Accept it if a general reader would understand it and it contains no errors; otherwise list each concrete problem.
+
+## User prompt
+
+Review this paragraph about b.
+
+Paragraph about b (revised).
+
+## Answer format
+
+Answer with one JSON object matching this schema (nothing else in the file):
+
+```json
+{
+  "properties": {
+    "accepted": {
+      "type": "boolean"
+    },
+    "problems": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "accepted",
+    "problems"
+  ],
+  "title": "Verdict",
+  "type": "object"
+}
+```

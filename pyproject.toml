@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "treadle"
+version = "0.0.0"
+description = "Write an agent workflow once in Pydantic AI; run it from any agent harness"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = []
+
+[project.scripts]
+treadle = "treadle.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=7", "ruff>=0.9"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "src"]
+norecursedirs = ["docs", ".*", "build", "dist"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = ["docs/experiments/code"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
